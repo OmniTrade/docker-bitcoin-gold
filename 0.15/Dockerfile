@@ -4,9 +4,10 @@ LABEL maintainer.0="João Fonseca (@joaopaulofonseca)" \
   maintainer.1="Pedro Branco (@pedrobranco)" \
   maintainer.2="Rui Marinho (@ruimarinho)"
 
-RUN useradd -r bitcoingold \
-  && apt-get update -y \
-  && apt-get install -y curl gnupg unzip \
+RUN groupadd -r bitcoingold \
+  && useradd -r -m -g bitcoingold bitcoingold \
+  && apt-get update -y --fix-missing\
+  && apt-get install -y curl gnupg unzip python-setuptools python-pip procps htop\
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
   && set -ex \
@@ -20,6 +21,9 @@ RUN useradd -r bitcoingold \
     gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys "$key" ; \
   done
 
+RUN pip install --upgrade google-cloud-logging
+RUN pip install --upgrade grpcio==1.7.3
+
 ENV GOSU_VERSION=1.10
 
 RUN curl -o /usr/local/bin/gosu -fSL https://github.com/tianon/gosu/releases/download/${GOSU_VERSION}/gosu-$(dpkg --print-architecture) \
@@ -31,7 +35,7 @@ RUN curl -o /usr/local/bin/gosu -fSL https://github.com/tianon/gosu/releases/dow
 ENV BITCOIN_GOLD_VERSION=0.15.1-rc1
 ENV BITCOIN_GOLD_FOLDER_VERSION=0.15.1
 ENV BITCOIN_GOLD_PREFIX=/opt/bitcoin-gold-${BITCOIN_GOLD_FOLDER_VERSION}
-ENV BITCOIN_GOLD_DATA=/home/bitcoingold/.bitcoingold
+ENV BITCOIN_GOLD_DATA=/data
 ENV PATH=${BITCOIN_GOLD_PREFIX}/bin:$PATH
 RUN curl -SLO https://github.com/BTCGPU/BTCGPU/releases/download/v${BITCOIN_GOLD_VERSION}/bitcoin-gold-${BITCOIN_GOLD_FOLDER_VERSION}-x86_64-linux-gnu.tar.gz \
   && curl -SLO https://github.com/BTCGPU/BTCGPU/releases/download/v${BITCOIN_GOLD_VERSION}/SHA256SUMS.asc \
@@ -41,8 +45,17 @@ RUN curl -SLO https://github.com/BTCGPU/BTCGPU/releases/download/v${BITCOIN_GOLD
   && rm *.tar.gz
 
 COPY docker-entrypoint.sh /entrypoint.sh
+COPY rabbitmqadmin /usr/bin/rabbitmqadmin
+COPY google-logger /usr/bin/google-logger
 
-VOLUME ["/home/bitcoingold/.bitcoingold"]
+RUN chmod +x /usr/bin/rabbitmqadmin
+RUN chmod +x /usr/bin/google-logger
+
+RUN mkdir "$BITCOIN_GOLD_DATA" \
+	&& chown -R bitcoingold:bitcoingold "$BITCOIN_GOLD_DATA" \
+	&& ln -sfn "$BITCOIN_GOLD_DATA" /home/bitcoingold/.bitcoingold \
+	&& chown -h bitcoingold:bitcoingold /home/bitcoingold/.bitcoingold
+VOLUME ["/data"]
 
 EXPOSE 8332 8338 18332 18338 18444
 
