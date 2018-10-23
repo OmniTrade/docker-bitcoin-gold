@@ -5,8 +5,8 @@ LABEL maintainer.0="João Fonseca (@joaopaulofonseca)" \
   maintainer.2="Rui Marinho (@ruimarinho)" \
   editor.0="Bruno Amaral F(@bamaralf)"
 
-ENV BITCOIN_GOLD_VERSION=0.15.1
-ENV BITCOIN_GOLD_FOLDER_VERSION=0.15.1
+ENV BITCOIN_GOLD_VERSION=0.15.2
+ENV BITCOIN_GOLD_FOLDER_VERSION=0.15.2
 ENV BITCOIN_GOLD_PREFIX=/opt/bitcoin-gold-${BITCOIN_GOLD_FOLDER_VERSION}
 ENV BITCOIN_GOLD_DATA=/data
 ENV PATH=${BITCOIN_GOLD_PREFIX}/bin:$PATH
@@ -18,8 +18,8 @@ COPY google-logger /usr/bin/google-logger
 
 RUN groupadd -r bitcoingold \
   && useradd -r -m -g bitcoingold bitcoingold \
-  && apt-get update -y --fix-missing\
-  && apt-get install -y curl gnupg unzip python-setuptools python-pip procps htop\
+  && apt-get update -y --fix-missing \
+  && apt-get install -y curl gnupg unzip python-setuptools python-pip procps htop \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
   && set -ex \
